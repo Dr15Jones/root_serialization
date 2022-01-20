@@ -44,6 +44,7 @@ target_link_libraries(sequence_classes_dict PUBLIC ROOT::RIO ROOT::Net)
 
 add_executable(threaded_io_test
   DeserializeStrategy.cc
+  EmptySource.cc
   DummyOutputer.cc
   SerializeOutputer.cc
   HDFOutputer.cc
@@ -70,6 +71,7 @@ add_executable(threaded_io_test
   OutputerFactory.cc
   outputerFactoryGenerator.cc
   pds_reading.cc
+  SourceFactory.cc
   sourceFactoryGenerator.cc
   threaded_io_test.cc)
 
@@ -125,8 +127,8 @@ add_test(NAME RootOutputerEmptySplitLevelTest COMMAND threaded_io_test EmptySour
 add_test(NAME RootOutputerEmptyAllOptionsTest COMMAND threaded_io_test EmptySource 1 1 0 10 RootOutputer=test_empty.root:splitLevel=1:compressionLevel=1:compressionAlgorithm=LZMA:basketSize=32000:treeMaxVirtualSize=-1:autoFlush=900)
 add_test(NAME TestProductsROOT COMMAND bash -c "${CMAKE_CURRENT_BINARY_DIR}/threaded_io_test TestProductsSource 1 1 0 10 RootOutputer=test_prod.root; ${CMAKE_CURRENT_BINARY_DIR}/threaded_io_test SerialRootSource=test_prod.root 1 1 0 10 TestProductsOutputer")
 add_test(NAME TestProductsROOTReplicated COMMAND bash -c "${CMAKE_CURRENT_BINARY_DIR}/threaded_io_test TestProductsSource 1 1 0 10 RootOutputer=test_prod_repl.root; ${CMAKE_CURRENT_BINARY_DIR}/threaded_io_test ReplicatedRootSource=test_prod_repl.root 1 1 0 10 TestProductsOutputer")
-add_test(NAME TestProductsROOTRepeating COMMAND bash -c "${CMAKE_CURRENT_BINARY_DIR}/threaded_io_test TestProductsSource 1 1 0 10 RootOutputer=test_prod_rep.root; ${CMAKE_CURRENT_BINARY_DIR}/threaded_io_test RepeatingRootSource=test_prod_rep.root:5 1 1 0 100 TestProductsOutputer")
-add_test(NAME TestProductsROOTRepeatingOneBranch COMMAND bash -c "${CMAKE_CURRENT_BINARY_DIR}/threaded_io_test TestProductsSource 1 1 0 10 RootOutputer=test_prod_rep_1branch.root; ${CMAKE_CURRENT_BINARY_DIR}/threaded_io_test RepeatingRootSource=test_prod_rep_1branch.root:5:floats 1 1 0 100 TestProductsOutputer")
+add_test(NAME TestProductsROOTRepeating COMMAND bash -c "${CMAKE_CURRENT_BINARY_DIR}/threaded_io_test TestProductsSource 1 1 0 10 RootOutputer=test_prod_rep.root; ${CMAKE_CURRENT_BINARY_DIR}/threaded_io_test RepeatingRootSource=test_prod_rep.root:repeat=5 1 1 0 100 TestProductsOutputer")
+add_test(NAME TestProductsROOTRepeatingOneBranch COMMAND bash -c "${CMAKE_CURRENT_BINARY_DIR}/threaded_io_test TestProductsSource 1 1 0 10 RootOutputer=test_prod_rep_1branch.root; ${CMAKE_CURRENT_BINARY_DIR}/threaded_io_test RepeatingRootSource=test_prod_rep_1branch.root:repeat=5:branchToRead=floats 1 1 0 100 TestProductsOutputer")
 add_test(NAME TBufferMergerRootOutputerEmptyTest COMMAND threaded_io_test EmptySource 1 1 0 10 TBufferMergerRootOutputer=test_empty.root)
 add_test(NAME TBufferMergerRootOutputerEmptySplitLevelTest COMMAND threaded_io_test EmptySource 1 1 0 10 TBufferMergerRootOutputer=test_empty.root:splitLevel=1)
 add_test(NAME TBufferMergerRootOutputerEmptyAllOptionsTest COMMAND threaded_io_test EmptySource 1 1 0 10 TBufferMergerRootOutputer=test_empty.root:splitLevel=1:compressionLevel=1:compressionAlgorithm=LZMA:basketSize=32000:treeMaxVirtualSize=-1:autoFlush=900)

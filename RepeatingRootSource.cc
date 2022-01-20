@@ -1,4 +1,5 @@
 #include "RepeatingRootSource.h"
+#include "SourceFactory.h"
 #include <iostream>
 #include "TBranch.h"
 #include "TTree.h"
@@ -133,4 +134,23 @@ void RepeatingRootSource::fillBuffer(int iEntry, std::vector<BufferInfo>& bi, st
 void RepeatingRootSource::printSummary() const {
       std::chrono::microseconds sourceTime = accumulatedTime();
       std::cout <<"\nSource time: "<<sourceTime.count()<<"us\n"<<std::endl;
+}
+
+namespace {
+    class Maker : public SourceMakerBase {
+  public:
+    Maker(): SourceMakerBase("RepeatingRootSource") {}
+      std::unique_ptr<SharedSourceBase> create(unsigned int iNLanes, unsigned long long iNEvents, ConfigurationParameters const& params) const final {
+        auto fileName = params.get<std::string>("fileName");
+        if(not fileName) {
+          std::cout <<"no file name given\n";
+          return {};
+        }
+        unsigned int nUniqueEvents=params.get<unsigned int>("repeat",10);
+        std::string branchToRead = params.get<std::string>("branchToRead","");
+        return std::make_unique<RepeatingRootSource>(*fileName, nUniqueEvents, iNLanes, iNEvents, branchToRead);
+    }
+    };
+
+  Maker s_maker;
 }

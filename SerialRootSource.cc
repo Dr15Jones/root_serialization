@@ -1,4 +1,5 @@
 #include "SerialRootSource.h"
+#include "SourceFactory.h"
 
 #include "TTree.h"
 #include "TBranch.h"
@@ -105,3 +106,20 @@ void SerialRootDelayedRetriever::getAsync(DataProductRetriever& dataProduct, int
       task.doneWaiting();
     });
 };
+
+namespace {
+    class Maker : public SourceMakerBase {
+  public:
+    Maker(): SourceMakerBase("SerialRootSource") {}
+      std::unique_ptr<SharedSourceBase> create(unsigned int iNLanes, unsigned long long iNEvents, ConfigurationParameters const& params) const final {
+        auto fileName = params.get<std::string>("fileName");
+        if(not fileName) {
+          std::cout <<"no file name given\n";
+          return {};
+        }
+        return std::make_unique<SerialRootSource>(iNLanes, iNEvents, *fileName);
+    }
+    };
+
+  Maker s_maker;
+}

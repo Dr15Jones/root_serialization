@@ -119,6 +119,10 @@ int main(int argc, char* argv[]) {
       return 1;
     }
     auto source =sourceFactory(1,1);
+    if(not source) {
+      std::cout <<"failed to create source\n";
+      return 1;
+    }
     Lane lane(0, source.get(), 0);
     out->setupForLane(0, lane.dataProducts());
     auto pOut = out.get();

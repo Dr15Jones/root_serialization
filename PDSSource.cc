@@ -1,5 +1,7 @@
 #include "PDSSource.h"
 #include "TClass.h"
+#include "SourceFactory.h"
+#include "ReplicatedSharedSource.h"
 
 #include "Deserializer.h"
 #include "UnrolledDeserializer.h"
@@ -75,3 +77,19 @@ PDSSource::~PDSSource() {
   }
 }
 
+namespace {
+    class Maker : public SourceMakerBase {
+  public:
+    Maker(): SourceMakerBase("ReplicatedPDSSource") {}
+      std::unique_ptr<SharedSourceBase> create(unsigned int iNLanes, unsigned long long iNEvents, ConfigurationParameters const& params) const final {
+        auto fileName = params.get<std::string>("fileName");
+        if(not fileName) {
+          std::cout <<"no file name given\n";
+          return {};
+        }
+        return std::make_unique<ReplicatedSharedSource<PDSSource>>(iNLanes, iNEvents, *fileName);
+    }
+    };
+
+  Maker s_maker;
+}

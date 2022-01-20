@@ -1,4 +1,6 @@
 #include "HDFSource.h"
+#include "SourceFactory.h"
+#include "ReplicatedSharedSource.h"
 
 #include "TClass.h"
 #include "TBufferFile.h"
@@ -160,4 +162,21 @@ void HDFSource::deserializeDataProducts(buffer_iterator it, buffer_iterator itEn
     ++it;
   }
   assert(it==itEnd);
+}
+
+namespace {
+    class Maker : public SourceMakerBase {
+  public:
+    Maker(): SourceMakerBase("HDFSource") {}
+      std::unique_ptr<SharedSourceBase> create(unsigned int iNLanes, unsigned long long iNEvents, ConfigurationParameters const& params) const final {
+        auto fileName = params.get<std::string>("fileName");
+        if(not fileName) {
+          std::cout <<"no file name given\n";
+          return {};
+        }
+        return std::make_unique<ReplicatedSharedSource<HDFSource>>(iNLanes, iNEvents, *fileName);
+    }
+    };
+
+  Maker s_maker;
 }

@@ -1,4 +1,7 @@
 #include "RootSource.h"
+#include "SourceFactory.h"
+#include "ReplicatedSharedSource.h"
+
 #include <iostream>
 #include "TBranch.h"
 #include "TTree.h"
@@ -71,4 +74,21 @@ bool RootSource::readEvent(long iEventIndex) {
     return true;
   }
   return false;
+}
+
+namespace {
+    class Maker : public SourceMakerBase {
+  public:
+    Maker(): SourceMakerBase("ReplicatedRootSource") {}
+      std::unique_ptr<SharedSourceBase> create(unsigned int iNLanes, unsigned long long iNEvents, ConfigurationParameters const& params) const final {
+        auto fileName = params.get<std::string>("fileName");
+        if(not fileName) {
+          std::cout <<"no file name given\n";
+          return {};
+        }
+        return std::make_unique<ReplicatedSharedSource<RootSource>>(iNLanes, iNEvents, *fileName);
+    }
+    };
+
+  Maker s_maker;
 }

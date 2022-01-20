@@ -1,4 +1,5 @@
 #include "TestProductsSource.h"
+#include "SourceFactory.h"
 #include "TClass.h"
 
 #include <iostream>
@@ -81,4 +82,16 @@ void TestProductsSource::printSummary() const {
 void TestProductsSource::readEventAsync(unsigned int iLane, long iEventIndex,  OptionalTaskHolder iTask) {
   delayedPerLane_[iLane].setEventIndex(iEventIndex);
   iTask.runNow();
+}
+
+namespace {
+    class Maker : public SourceMakerBase {
+  public:
+    Maker(): SourceMakerBase("TestProductsSource") {}
+      std::unique_ptr<SharedSourceBase> create(unsigned int iNLanes, unsigned long long iNEvents, ConfigurationParameters const& params) const final {
+        return std::make_unique<TestProductsSource>(iNLanes, iNEvents);
+    }
+    };
+
+  Maker s_maker;
 }

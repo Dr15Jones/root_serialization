@@ -69,6 +69,9 @@ namespace cce::tf {
     int ConfigurationParameters::convert<int>(std::string const& iValue);
 
   template<>
+    unsigned int ConfigurationParameters::convert<unsigned int>(std::string const& iValue);
+
+  template<>
     bool ConfigurationParameters::convert<bool>(std::string const& iValue);
 
 

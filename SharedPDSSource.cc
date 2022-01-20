@@ -1,4 +1,5 @@
 #include "SharedPDSSource.h"
+#include "SourceFactory.h"
 #include "Deserializer.h"
 #include "UnrolledDeserializer.h"
 
@@ -123,4 +124,22 @@ std::chrono::microseconds SharedPDSSource::deserializeTime() const {
     time += l.deserializeTime_;
   }
   return time;
+}
+
+
+namespace {
+    class Maker : public SourceMakerBase {
+  public:
+    Maker(): SourceMakerBase("SharedPDSSource") {}
+      std::unique_ptr<SharedSourceBase> create(unsigned int iNLanes, unsigned long long iNEvents, ConfigurationParameters const& params) const final {
+        auto fileName = params.get<std::string>("fileName");
+        if(not fileName) {
+          std::cout <<"no file name given\n";
+          return {};
+        }
+        return std::make_unique<SharedPDSSource>(iNLanes, iNEvents, *fileName);
+    }
+    };
+
+  Maker s_maker;
 }

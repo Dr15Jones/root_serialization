@@ -120,11 +120,11 @@ Reads the first N events from a standard ROOT file at construction time. The des
 ```
 or
 ```
-> threaded_io_test RepeatingRootSource=test.root:5 1 1 0 1000
+> threaded_io_test RepeatingRootSource=test.root:repeat=5 1 1 0 1000
 ```
 or
 ```
-> threaded_io_test RepeatingRootSource=test.root:5:ints 1 1 0 1000
+> threaded_io_test RepeatingRootSource=test.root:repeat=5:branchToRead=ints 1 1 0 1000
 ```
 
 
