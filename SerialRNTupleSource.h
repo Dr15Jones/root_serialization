@@ -47,7 +47,8 @@ namespace cce::tf {
     std::vector<EventIdentifier> identifiers_;
     std::vector<std::vector<void*>> ptrToDataProducts_;
     std::vector<std::vector<DataProductRetriever>> dataProductsPerLane_;
-
+    ROOT::Experimental::DescriptorId_t eventAuxID_;
+    
     bool delayReading_;
   };
 }

@@ -1,5 +1,6 @@
 #include "SerialRNTupleSource.h"
 #include "SourceFactory.h"
+#include "cms/EventAuxiliary.h"
 
 #include <iostream>
 
@@ -9,6 +10,7 @@ SerialRNTupleSource::SerialRNTupleSource(unsigned iNLanes, unsigned long long iN
   SharedSourceBase(iNEvents),
   events_{ROOT::Experimental::RNTupleReader::Open("Events", iName.c_str())},
   accumulatedTime_{std::chrono::microseconds::zero()},
+  eventAuxID_{ROOT::Experimental::kInvalidDescriptorId},
   delayReading_{iDelayReading}
  {
   if(not delayReading_) {
@@ -25,7 +27,8 @@ SerialRNTupleSource::SerialRNTupleSource(unsigned iNLanes, unsigned long long iN
   if (iNEvents < nEvents_ ) nEvents_ = iNEvents;
   
   const std::string eventIDBranchName{"EventID"}; 
-
+  const std::string eventAuxName{"EventAuxiliary"};
+  
   bool hasEventID = false;
   bool hasEventAux = false;
   auto const& model = events_->GetModel();
@@ -38,6 +41,10 @@ SerialRNTupleSource::SerialRNTupleSource(unsigned iNLanes, unsigned long long iN
     if(eventIDBranchName == field->GetFieldName()) {
       hasEventID = true;
       continue;
+    }
+    if(eventAuxName == field->GetFieldName()) {
+      hasEventAux = true;
+      eventAuxID_ = events_->GetDescriptor().FindFieldId(eventAuxName);
     }
     fieldIDs.emplace_back(field->GetFieldName());
     fieldType.emplace_back(field->GetTypeName());
@@ -72,6 +79,12 @@ SerialRNTupleSource::SerialRNTupleSource(unsigned iNLanes, unsigned long long iN
   }
 }
 
+namespace {
+  cce::tf::EventIdentifier convert(edm::EventAuxiliary const& iID) {
+    return cce::tf::EventIdentifier(iID.run(), iID.luminosityBlock(), iID.event());
+  }
+}
+
 void SerialRNTupleSource::readEventAsync(unsigned int iLane, long iEventIndex, OptionalTaskHolder iTask) {
   if(nEvents_ > iEventIndex) {
     auto temptask = iTask.releaseToTaskHolder();
@@ -79,11 +92,21 @@ void SerialRNTupleSource::readEventAsync(unsigned int iLane, long iEventIndex, O
     queue_.push(*group, [task=std::move(temptask), this, iLane, iEventIndex]() mutable {
         auto start = std::chrono::high_resolution_clock::now();
         if (delayReading_) {
-          identifiers_[iLane] = events_->GetView<cce::tf::EventIdentifier>("EventID")(iEventIndex);
-          delayedReaders_[iLane].setEventIndex(iEventIndex);
+          if (eventAuxID_ == ROOT::Experimental::kInvalidDescriptorId ) { 
+            identifiers_[iLane] = events_->GetView<cce::tf::EventIdentifier>("EventID")(iEventIndex);
+            delayedReaders_[iLane].setEventIndex(iEventIndex);
+          } else {
+            auto v = events_->GetView<void>(eventAuxID_);
+            v(iEventIndex);
+            identifiers_[iLane] = convert(*reinterpret_cast<edm::EventAuxiliary*>(v.GetValue().GetPtr<void>().get()));
+          }
         } else {
           events_->LoadEntry(iEventIndex, *entries_[iLane]);
-          identifiers_[iLane] = *entries_[iLane]->GetPtr<cce::tf::EventIdentifier>("EventID");
+          if(eventAuxID_ == ROOT::Experimental::kInvalidDescriptorId ) {
+            identifiers_[iLane] = *entries_[iLane]->GetPtr<cce::tf::EventIdentifier>("EventID");
+          } else {
+            identifiers_[iLane] = convert(*entries_[iLane]->GetPtr<edm::EventAuxiliary>("EventAuxiliary"));
+          }
         }
         accumulatedTime_ += std::chrono::duration_cast<decltype(accumulatedTime_)>(std::chrono::high_resolution_clock::now() - start);
         task.doneWaiting();
